@@ -10,7 +10,7 @@ export function mountScrollWorld(container, config) {
   const abort = new AbortController();
   let destroyed=false, raf=0, target=0, current=0, prevTime=0, playing=false;
   let viewport=innerHeight, width=innerWidth, active=-1, lastStatus='';
-  const intro=.28, ending=.6;
+  const intro=.28, ending=reduced?.6:2.2;
   let offset=intro;
   const segments=config.sections.map((section,i)=>{
     const s={...section, start:offset, end:offset+section.scroll, loading:false, ready:false, painted:false, url:null, failed:false};offset=s.end;
@@ -63,7 +63,7 @@ export function mountScrollWorld(container, config) {
     });
     if(active!==ci){active=ci;config.onChapter?.(ci)}
     emitStatus(reduced?'静态浏览':s.failed?'视频暂不可用 · 静态画面':s.ready?'':'正在载入影像');
-    config.onFrame?.({index:ci,local,progress:current/total,intro:1-smooth((current-intro)/.45),final:smooth((current-(offset-.35))/.4),reduced});
+    config.onFrame?.({index:ci,local,progress:current/total,intro:1-smooth((current-intro)/.45),final:smooth((current-(offset-.35))/.4),handoff:reduced?0:smooth((current-(offset+.3))/1.65),reduced});
     if(playing||current!==target)schedule();
   }
   function stop(){playing=false;config.onPlaying?.(false)}
