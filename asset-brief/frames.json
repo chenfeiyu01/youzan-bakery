@@ -1,0 +1,14 @@
+{
+  "opening-first-frame.png": {
+    "width": 1280,
+    "height": 720,
+    "time_seconds": 0.0,
+    "source": "public/assets/shot-1.mp4"
+  },
+  "closing-last-frame.png": {
+    "width": 1280,
+    "height": 720,
+    "time_seconds": 8.0,
+    "source": "public/assets/shot-5.mp4"
+  }
+}
