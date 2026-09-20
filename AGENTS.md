@@ -16,3 +16,7 @@ Use a full-screen branded arrival sequence while preloading the film. Keep runti
 Prioritize public loading speed: gate entry on both fully decoded HD boundary posters and the first film only, keep other film transfers sequential, and retain content-addressed URLs for safely cacheable media. Avoid increasing video size solely to add dense keyframes.
 
 Eagerly preload and decode both HD boundary frames. Never reveal an incompletely decoded poster; keep the video visible as fallback.
+
+## Local refinement branch
+
+Continue on `feat/local-refinements`; keep `main` as the approved baseline. Do not publish or push these refinements until the user explicitly requests it. The collection page uses warm paper, Song/serif typography and direct product interaction rather than repeating the homepage scroll-video choreography. Keep loading light and reuse approved product photography.
