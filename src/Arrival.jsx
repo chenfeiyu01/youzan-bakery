@@ -2,7 +2,7 @@ import {useEffect,useState} from 'react';
 
 export function Arrival({resources,onEnter}) {
  const [minimum,setMinimum]=useState(false),[slow,setSlow]=useState(false),[leaving,setLeaving]=useState(false);
- useEffect(()=>{const a=setTimeout(()=>setMinimum(true),1800),b=setTimeout(()=>setSlow(true),4500),c=setTimeout(()=>setLeaving(true),12000);return()=>[a,b,c].forEach(clearTimeout)},[]);
+ useEffect(()=>{const a=setTimeout(()=>setMinimum(true),650),b=setTimeout(()=>setSlow(true),2500),c=setTimeout(()=>setLeaving(true),8000);return()=>[a,b,c].forEach(clearTimeout)},[]);
  useEffect(()=>{if(minimum&&resources.done===resources.total)setLeaving(true)},[minimum,resources]);
  useEffect(()=>{if(!leaving)return;const timer=setTimeout(onEnter,matchMedia('(prefers-reduced-motion: reduce)').matches?0:950);return()=>clearTimeout(timer)},[leaving,onEnter]);
  return <div className={`arrival${leaving?' is-leaving':''}`} aria-label="准备品牌影像" aria-busy={!leaving}>

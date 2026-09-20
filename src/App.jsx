@@ -1,9 +1,10 @@
+import videoAssets from './video-assets.json';
 import {Arrival} from './Arrival';
 import {moveProduct} from './product-transition';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {ArrowDown,ArrowUpRight,ArrowUp,Plus,X} from '@phosphor-icons/react';
 import {mountScrollWorld,clamp} from './scroll-world';
-const chapters=[1.65,1,1.5,1.45,1.5].map((scroll,i)=>({scroll,clip:`/assets/shot-${i+1}.mp4`,poster:i===0?'/assets/opening-hd.webp':i===4?'/assets/final-hd.webp':`/assets/detail-${i+1}.webp`,...(i===4?{timeMap:[[0,0],[.12,.17],[.26,.43],[1,1]]}:{})}));
+const chapters=[1.65,1,1.5,1.45,1.5].map((scroll,i)=>({scroll,clip:videoAssets[i],poster:i===0?'/assets/opening-hd.webp':i===4?'/assets/final-hd.webp':`/assets/detail-${i+1}.webp`,...(i===4?{timeMap:[[0,0],[.12,.17],[.26,.43],[1,1]]}:{})}));
 const statements=[{en:'A STUDY IN LIGHTNESS',lines:['轻盈，','有其分量。'],note:'细微之处，决定一口的全部。'},{en:'PRECISION BECOMES PLEASURE',lines:['对细节的执着，','最终成为直觉。'],note:'入口的那一刻，你会明白。'},{en:'TIME. HEAT. TRANSFORMATION.',lines:['把时间，','交给风味。'],note:'直到香气、色泽与口感，在同一刻抵达。'}];
 function Lines({lines}){return lines.map((s,i)=><span className="line-mask" key={s}><span style={{'--line':i}}>{s}</span></span>)}
 function FilmWords({lines}){return lines.map((line,row)=><span className="film-line" key={line} style={{'--row':row}}>{[...line].map((char,i)=><span className="film-glyph" key={i} style={{'--glyph':i+row*2}}>{char}</span>)}</span>)}
@@ -11,7 +12,7 @@ function Ribbon({className,count=22}){return <svg className={className} viewBox=
 export function App(){
  const root=useRef(),stage=useRef(),track=useRef(),engine=useRef(),dialog=useRef(),lastFocus=useRef(),closing=useRef(false);
  const [panel,setPanel]=useState(null),[status,setStatus]=useState('');
- const [arriving,setArriving]=useState(true),[resources,setResources]=useState({done:0,total:6,failed:false});
+ const [arriving,setArriving]=useState(true),[resources,setResources]=useState({done:0,total:2,failed:false});
  const enter=useCallback(()=>setArriving(false),[]);
  useEffect(()=>{document.body.style.overflow=arriving||panel?'hidden':'';return()=>{document.body.style.overflow=''}},[arriving,panel]);
  const jump=id=>{engine.current.stop();document.getElementById(id)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'})};

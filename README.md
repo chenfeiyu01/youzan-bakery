@@ -53,3 +53,9 @@ npm run test:sites
 影片结束后的高清尾帧保持在同一图层，随滚动收缩为产品展示；原味产品卡片与详情使用相同的尾帧素材。工艺摄影从叠放展开至两侧，中央显露文案。产品详情使用图片位置连续过渡，支持关闭回位、Escape 和原焦点恢复；浏览器不支持 Popover 或用户选择减少动态效果时使用普通弹窗。
 
 三段影片文案分别使用字距舒展、错速横移、延迟显影。缎带从工艺区的6根线、作品区的12根线延伸到页尾22根线。指针视差仅对支持悬停且未开启减少动态效果的设备启用。
+
+### Video delivery
+
+The five 720p/24 fps films total 4.60 MB. They were encoded from the original approved clips with H.264, `-preset slow -crf 26 -g 36 -keyint_min 36 -sc_threshold 0 -movflags +faststart`; shot 2 retains its 4.791667-second edit. HD opening/ending posters are unchanged.
+
+`src/video-assets.json` references SHA-256-suffixed film names. Update the filename and manifest whenever a film changes; the Worker allows one-year immutable caching only for these versioned URLs. Entry waits for the opening poster and first decoded film, then downloads remaining films one at a time, prioritizing the visitor's current segment for the next transfer. The arrival animation has a 650 ms minimum, offers a bypass after 2.5 seconds, and begins dismissal after at most 8 seconds.

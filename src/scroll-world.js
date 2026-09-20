@@ -21,26 +21,37 @@ export function mountScrollWorld(container, config) {
     return s;
   });
   const total=offset+ending;
-  let posterSettled=false;
-  function preloadState(){if(!destroyed)config.onPreload?.({done:(posterSettled?1:0)+(reduced?0:segments.filter(s=>s.painted||s.failed).length),total:reduced?1:segments.length+1,failed:segments.some(s=>s.failed)})}
+  let posterSettled=false, downloading=false;
+  // Only the opening poster and first decoded film gate entry.
+  function preloadState(){if(!destroyed)config.onPreload?.({done:(posterSettled?1:0)+(reduced?0:Number(segments[0].painted||segments[0].failed)),total:reduced?1:2,failed:segments[0].failed})}
+  function pump(){
+    if(destroyed||reduced||downloading)return;
+    const first=segments[0];
+    if(!first.painted&&!first.failed){if(!first.loading&&!first.ready)load(first);return}
+    // One transfer at a time; a visitor who skips ahead gets that film next.
+    const index=Math.max(0,segments.findIndex(s=>target<s.end));
+    const order=[...segments.slice(index),...segments.slice(0,index)];
+    const next=order.find(s=>!s.loading&&!s.ready&&!s.failed);
+    if(next)load(next);
+  }
   segments[0].image.decode().catch(()=>{}).then(()=>{posterSettled=true;preloadState()});
 
   function layout(){ viewport=innerHeight;width=innerWidth;config.track.style.height=`${(total+1)*viewport}px`;read(); }
   function emitStatus(value){if(lastStatus!==value){lastStatus=value;config.onStatus?.(value)}}
   async function load(s){
     if(reduced||s.loading||s.ready||s.failed||destroyed)return;
-    s.loading=true;
+    s.loading=true;downloading=true;
     try{
       const res=await fetch(s.clip,{signal:abort.signal});if(!res.ok)throw Error('Video unavailable');
       const blob=await res.blob();if(destroyed)return;
       const v=document.createElement('video');v.muted=true;v.playsInline=true;v.preload='auto';v.setAttribute('aria-hidden','true');
       s.url=URL.createObjectURL(blob);v.src=s.url;s.video=v;
       v.addEventListener('loadedmetadata',()=>{s.ready=true;s.loading=false;schedule()},{signal:abort.signal});
-      v.addEventListener('loadeddata',()=>{s.painted=true;s.layer.classList.add('has-video');preloadState();schedule()},{signal:abort.signal});
+      v.addEventListener('loadeddata',()=>{s.painted=true;s.layer.classList.add('has-video');preloadState();pump();schedule()},{signal:abort.signal});
       v.addEventListener('seeked',()=>{s.painted=true;s.layer.classList.add('has-video');schedule()},{signal:abort.signal});
-      v.addEventListener('error',()=>{s.failed=true;s.loading=false;preloadState();schedule()},{signal:abort.signal});
+      v.addEventListener('error',()=>{s.failed=true;s.loading=false;preloadState();pump();schedule()},{signal:abort.signal});
       s.layer.append(v);v.load();
-    }catch(e){if(!destroyed){s.loading=false;s.failed=true;preloadState();schedule()}}
+    }catch(e){if(!destroyed){s.loading=false;s.failed=true;preloadState();schedule()}}finally{downloading=false;pump()}
   }
   function schedule(){if(!raf&&!destroyed&&!document.hidden)raf=requestAnimationFrame(tick)}
   function read(){target=clamp(scrollY/viewport,0,total);schedule()}
@@ -54,7 +65,7 @@ export function mountScrollWorld(container, config) {
     const s=segments[ci];const local=clamp((current-s.start)/(s.end-s.start));
     const next=segments[ci+1];const cross=next?smooth((current-(s.end-.045))/.045):0;
     segments.forEach((seg,i)=>{
-      if(Math.abs(i-ci)<=1)load(seg);
+
       let op=i===ci?1:(i===ci+1?cross:0);
       seg.layer.classList.toggle('opening-hold',i===0&&current<=intro);seg.layer.classList.toggle('ending-hold',i===segments.length-1&&current>=offset);seg.layer.style.opacity=String(op);seg.layer.style.zIndex=String(i);
       if(!seg.ready||!seg.video||seg.video.seeking)return;
@@ -65,6 +76,7 @@ export function mountScrollWorld(container, config) {
         try{seg.video.currentTime=t}catch{}
       }
     });
+    pump();
     if(active!==ci){active=ci;config.onChapter?.(ci)}
     emitStatus(reduced?'静态浏览':s.failed?'视频暂不可用 · 静态画面':s.painted?'':'影像准备中 · 可继续浏览');
     config.onFrame?.({index:ci,local,progress:current/total,intro:1-smooth((current-intro)/.45),final:smooth((current-(offset-.35))/.4),handoff:reduced?0:smooth((current-(offset+.3))/1.65),reduced});
@@ -82,6 +94,6 @@ export function mountScrollWorld(container, config) {
   window.addEventListener('pointerdown',prime,{once:true,passive:true,signal:abort.signal});
   ['wheel','touchstart','keydown'].forEach(e=>window.addEventListener(e,stop,{passive:true,signal:abort.signal}));
   document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();cancelAnimationFrame(raf);raf=0}else{prevTime=0;schedule()}},{signal:abort.signal});
-  layout();segments.forEach(load);preloadState();
+  layout();pump();preloadState();
   return {go,toEnd,toggle,stop,reduced,destroy(){destroyed=true;abort.abort();cancelAnimationFrame(raf);segments.forEach(s=>{if(s.video){s.video.pause();s.video.removeAttribute('src');s.video.load()}if(s.url)URL.revokeObjectURL(s.url);s.layer.remove()})}};
 }

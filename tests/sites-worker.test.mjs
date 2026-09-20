@@ -66,3 +66,18 @@ test("emits the files required by Sites packaging", async () => {
   await access(new URL("../dist/server/index.js", import.meta.url));
   await access(new URL("../dist/.openai/hosting.json", import.meta.url));
 });
+
+test("versioned films retain range headers and allow long-lived caching", async () => {
+  const request = new Request("https://example.test/assets/shot-1-123456abcdef.mp4", { headers: { Range: "bytes=0-2" } });
+  const response = await worker.fetch(request, {ASSETS:{fetch: async () => new Response("abc", {status:206,headers:{"Content-Range":"bytes 0-2/100","Content-Type":"video/mp4"}})}});
+  assert.equal(response.status,206);
+  assert.equal(response.headers.get("Content-Range"),"bytes 0-2/100");
+  assert.equal(response.headers.get("Cache-Control"),"public, max-age=31536000, immutable");
+  assert.equal(await response.text(),"abc");
+});
+
+test("missing films never receive immutable caching", async () => {
+ const response = await worker.fetch(new Request("https://example.test/assets/shot-1-123456abcdef.mp4"), {ASSETS:{fetch:async()=>new Response("missing",{status:404})}});
+ assert.equal(response.status,404);
+ assert.equal(response.headers.get("Cache-Control"),null);
+});
