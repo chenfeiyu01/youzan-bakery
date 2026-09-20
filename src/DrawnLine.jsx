@@ -1,4 +1,7 @@
 export function DrawnLine({variant='sweep',className=''}){
- const paths={sweep:'M -40 270 C 150 20 500 330 480 145 C 455 -15 220 160 425 290 C 590 395 925 175 1240 245',loop:'M -40 370 C 270 450 210 15 505 75 C 820 140 385 430 655 360 C 855 300 940 15 1240 100',signature:'M -25 265 C 240 380 375 28 610 90 C 825 145 575 375 430 270 C 345 205 545 165 690 245 C 930 385 1000 120 1220 170'};
- return <svg className={`drawn-line drawn-line-${variant} ${className}`} data-drawn-line viewBox="0 0 1200 440" fill="none" aria-hidden="true"><path d={paths[variant]} pathLength="1"/></svg>
+ const paths={
+  sweep:'M 240 20 C 95 120 345 245 230 380 C 105 520 45 340 155 340 C 335 340 350 650 180 775 C 55 875 115 1015 260 1180',
+  loop:'M 130 20 C 315 145 310 285 170 405 C 20 530 60 710 215 700 C 345 690 320 515 200 595 C 55 700 115 970 240 1180'
+ };
+ return <svg className={`drawn-line drawn-line-${variant} ${className}`} data-drawn-line viewBox="0 0 400 1200" preserveAspectRatio="none" fill="none" aria-hidden="true"><path d={paths[variant]||paths.sweep} pathLength="1"/></svg>
 }

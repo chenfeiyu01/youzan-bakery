@@ -1,5 +1,4 @@
 import {DrawnLine} from './DrawnLine';
-import {mountScrollDamping} from './scroll-damping';
 import videoAssets from './video-assets.json';
 import {Arrival} from './Arrival';
 import {moveProduct} from './product-transition';
@@ -24,23 +23,22 @@ export function App(){
   const r=root.current,copies=[...r.querySelectorAll('[data-film-copy]')];
   engine.current=mountScrollWorld(stage.current,{sections:chapters,track:track.current,onStatus:setStatus,onPreload:setResources,onFrame:({index,local,intro,final,progress,reduced,handoff})=>{
    r.style.setProperty('--handoff',handoff);const debut=r.querySelector('.product-debut');debut.inert=handoff<.75;r.style.setProperty('--intro',intro);r.style.setProperty('--final',final);r.style.setProperty('--travel',progress);
-   copies.forEach(el=>{const n=Number(el.dataset.filmCopy);let a=n===0?intro:n===4?final*(1-handoff):n===index?Math.min(clamp((local-.18)/.18),clamp((.93-local)/.16)):0;
+   copies.forEach(el=>{const n=Number(el.dataset.filmCopy);let a=n===0?intro:n===4?final*(1-handoff):n===5?(index===0?clamp((local-.72)/.22):0):n===index?clamp((local-.18)/.18):0;
     el.style.opacity=a;el.style.visibility=a>.005?'visible':'hidden';el.inert=a<.4;
-    el.style.setProperty('--phase',reduced?.5:local);el.style.setProperty('--reveal',a);el.style.setProperty('--drift',reduced?'0':String(n===0?(1-intro)*-90:n===4?(1-final)*60:(local-.5)*-130));
+    el.style.setProperty('--phase',reduced?.5:Math.min(local,.65));el.style.setProperty('--reveal',a);el.style.setProperty('--drift',reduced?'0':String(n===0?(1-intro)*-90:n===4?(1-final)*60:(Math.min(local,.65)-.5)*-130));
    });
   }});
-  const disposeDamping=mountScrollDamping();
   const strokes=[...r.querySelectorAll('[data-drawn-line]')];
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const animated=[...r.querySelectorAll('[data-reveal]')];
   const observer=new IntersectionObserver(entries=>entries.forEach(e=>e.target.classList.toggle('in-view',e.isIntersecting)),{threshold:.12});animated.forEach(el=>observer.observe(el));
   const about=r.querySelector('.manifesto'),gallery=r.querySelector('.gallery-track'),rail=r.querySelector('.gallery-rail'),atelier=r.querySelector('.atelier'),ingredient=r.querySelector('.ingredient'),footer=r.querySelector('.brand-footer'),headline=r.querySelector('.manifesto-grid h2'),craft=r.querySelector('.editorial-images');let raf=0;
-  const draw=()=>{raf=0;strokes.forEach(el=>{const rect=el.getBoundingClientRect();el.style.setProperty('--draw',reduced?1:clamp((innerHeight*.94-rect.top)/(innerHeight*.6+rect.height*.4)))});const rect=about.getBoundingClientRect(),g=gallery.getBoundingClientRect();r.style.setProperty('--editorial',reduced?0:clamp((innerHeight-rect.top)/(rect.height+innerHeight)));
+  const draw=()=>{raf=0;strokes.forEach(el=>{const rect=el.getBoundingClientRect();el.style.setProperty('--draw',reduced?1:clamp((innerHeight*.8-rect.top)/Math.max(1,rect.height)))});const rect=about.getBoundingClientRect(),g=gallery.getBoundingClientRect();r.style.setProperty('--editorial',reduced?0:clamp((innerHeight-rect.top)/(rect.height+innerHeight)));
    const p=clamp(-g.top/Math.max(1,g.height-innerHeight));gallery.style.setProperty('--slide',reduced?0:p);gallery.style.setProperty('--rail-distance',`${Math.max(0,rail.scrollWidth-innerWidth*.9)}px`);
    const craftRect=craft.getBoundingClientRect();craft.style.setProperty('--unfold',reduced?1:clamp(-craftRect.top/Math.max(1,craftRect.height-innerHeight)));const h=headline.getBoundingClientRect();headline.style.setProperty('--ink',reduced?1:clamp((innerHeight*.85-h.top)/(h.height+innerHeight*.65)));const f=footer.getBoundingClientRect();footer.style.setProperty('--end',reduced?1:clamp((innerHeight-f.top)/(Math.min(f.height,innerHeight)*.85)));const a=atelier.getBoundingClientRect(),b=ingredient.getBoundingClientRect();atelier.style.setProperty('--aperture',reduced?1:clamp((innerHeight-a.top)/(innerHeight*.85)));atelier.style.setProperty('--space',reduced?0:clamp((innerHeight-a.top)/(a.height+innerHeight)));ingredient.style.setProperty('--ingredient',reduced?0:clamp((innerHeight-b.top)/(b.height+innerHeight)));r.style.setProperty('--rotation',reduced?'0deg':`${scrollY*.035}deg`);
   };
   const scroll=()=>{if(!raf)raf=requestAnimationFrame(draw)};window.addEventListener('scroll',scroll,{passive:true});window.addEventListener('resize',scroll);draw();
-  return()=>{disposeDamping();engine.current.destroy();observer.disconnect();cancelAnimationFrame(raf);window.removeEventListener('scroll',scroll);window.removeEventListener('resize',scroll)};
+  return()=>{engine.current.destroy();observer.disconnect();cancelAnimationFrame(raf);window.removeEventListener('scroll',scroll);window.removeEventListener('resize',scroll)};
  },[]);
  useEffect(()=>{if(panel){dialog.current.showModal();requestAnimationFrame(()=>moveProduct(lastFocus.current?.querySelector('img'),dialog.current.querySelector('.product-photo img')))}else{dialog.current.close();lastFocus.current?.focus({preventScroll:true})}},[panel]);
  const close=async()=>{if(closing.current)return;closing.current=true;await moveProduct(dialog.current.querySelector('.product-photo img'),lastFocus.current?.querySelector('img'));setPanel(null);closing.current=false};
@@ -56,6 +54,7 @@ export function App(){
    <div className="hero-type" data-film-copy="0" aria-hidden="true"><span>YOU</span><span>ZAN</span></div>
    <section className="hero-copy film-copy" data-film-copy="0" aria-label="开场"><p className="micro">AN OBSESSION WITH THE EVERYDAY.</p><h1><Lines lines={['把一只可颂，','做到极致。']}/></h1><button className="text-link" onClick={()=>engine.current.go(1)}>进入这一层世界 <ArrowDown size={18}/></button></section>
    <div className="hero-bottom" data-film-copy="0"><span>BAKED WITH INTENT.</span><span>下滑，继续下一幕 <ArrowDown size={13}/></span><span>有赞 · 烘焙的另一面</span></div>
+   <section className="film-copy statement statement-0" data-film-copy="5"><p className="micro">LAYER BY LAYER.</p><h2><FilmWords lines={['层层之间，','风味初现。']}/></h2><p className="statement-note">从第一层酥香，开始。</p></section>
    {statements.map((s,i)=><section key={s.en} data-film-copy={i+1} className={`film-copy statement statement-${i}`} aria-label={s.en}><p className="micro">{s.en}</p><h2 aria-label={s.lines.join('')}><span aria-hidden="true"><FilmWords lines={s.lines}/></span></h2><p className="statement-note">{s.note}</p></section>)}
    <section className="film-copy finale" data-film-copy="4"><p className="micro">THE EXTRAORDINARY, EVERY DAY.</p><h2><Lines lines={['平凡的一口。','不平凡的全部。']}/></h2><button className="text-link" onClick={()=>jump('approach')}>认识有赞烘焙 <ArrowDown size={18}/></button></section>
    <section className="product-debut" aria-label="从影像到作品"><div><p className="micro">FROM A MOMENT TO AN EVERYDAY RITUAL.</p><h2>所有认真，<br/>凝于这一口。</h2><p>原味可颂 / CLASSIC CROISSANT</p><button className="text-link" onClick={()=>jump('collection')}>探索烘焙作品 <ArrowUpRight size={20}/></button></div></section>
@@ -74,7 +73,7 @@ export function App(){
    <button onPointerMove={followPointer} onPointerLeave={resetPointer} className="work-card chocolate-card" onClick={e=>open(e,'chocolate')} aria-label="查看巧克力酥"><div className="work-image"><img src="/assets/chocolate.webp" width="1536" height="1024" alt="金黄巧克力酥与两个巧克力芯" loading="lazy"/><span className="work-explore">探索作品</span><span className="round-link"><ArrowUpRight size={30}/></span></div><div className="work-meta"><h3>巧克力酥</h3><span>PAIN AU CHOCOLAT</span></div></button>
   </div></div></section>
   <section className="atelier" id="atelier"><div className="atelier-photo"><img src="/assets/atelier.webp" width="1672" height="941" alt="自然光下的开放式烘焙工作室" loading="lazy"/></div><div className="atelier-copy" data-reveal><p className="micro">A SPACE FOR THE EXTRAORDINARY.</p><h2><Lines lines={['让认真，','成为日常。']}/></h2><p>在光线与面粉之间，<br/>为下一次出炉，留足时间。</p></div><span className="atelier-caption">有赞烘焙 / 概念工作室</span></section>
-  <footer className="brand-footer closing-note"><DrawnLine variant="signature" className="closing-stroke"/><div className="closing-note-top"><span>THE ART OF EVERYDAY BAKING.</span><span>有赞烘焙</span></div><div className="closing-note-copy"><p>故事在此收尾，风味仍有回响。</p><h2>这一口，<br/><em>值得回味。</em></h2><a href="/collection" className="closing-door"><span>继续探索风味藏品室</span><ArrowUpRight size={28} weight="thin"/></a></div><div className="closing-signature"><a href="/">YOUZAN BAKERY</a><span>面粉、时间，以及一点执着。</span><button onClick={()=>engine.current.go(0)}>回到开场 <ArrowUp size={16}/></button></div></footer>
+  <footer className="brand-footer"><Ribbon className="layer-sculpture ribbon-sculpture"/><div className="footer-invitation" data-reveal><p className="micro">WELCOME TO YOUZAN.</p><h2><Lines lines={['下一次心动，','从这一口开始。']}/></h2><button className="text-link" onClick={()=>engine.current.go(0)}>再看一遍 <ArrowUp size={20}/></button></div><div className="footer-brand" aria-hidden="true"><span className="footer-letters">{[..."YOUZAN"].map((letter,i)=><span key={i} style={{"--char":i}}>{letter}</span>)}</span><span className="rotating-star"><Plus size={130} weight="thin"/></span></div><div className="footer-small"><span>有赞烘焙</span><span>THE ART OF EVERYDAY BAKING.</span><span>品牌概念体验</span></div></footer>
   <dialog ref={dialog} className="brand-dialog" onCancel={e=>{e.preventDefault();close()}} onClick={e=>{if(e.target===dialog.current)close()}} aria-labelledby="dialog-title"><button className="close-dialog" aria-label="关闭" onClick={close}><X size={24}/></button><div className="product-photo"><img src={product.image} alt={product.name}/></div><div className="panel-copy"><p className="micro">THE ORIGINAL.</p><h2 id="dialog-title">{product.name}</h2><p>{product.copy}</p><p className="product-caption">{product.en}</p><button className="text-link" onClick={()=>{setPanel(null);engine.current.go(1)}}>探索酥层的奥秘 <ArrowUpRight size={20}/></button></div></dialog>
  </main></>
 }

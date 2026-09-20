@@ -23,7 +23,7 @@ export function mountScrollWorld(container, config) {
     return s;
   });
   const total=offset+ending;
-  const stops=[0,...segments.slice(1).map(s=>s.start),offset+.001,total];
+  const stops=[0,...segments.map(s=>s.end-.004),total];
   let downloading=false;
   function animateTo(index){
     const from=current,to=stops[index];
@@ -120,24 +120,24 @@ export function mountScrollWorld(container, config) {
     current=motion?current:reduced?target:current+(target-current)*(1-Math.exp(-dt/75));
     if(Math.abs(current-target)<.0004)current=target;
     let ci=segments.findIndex(s=>current<s.end);if(ci<0)ci=segments.length-1;
-    const s=segments[ci];const local=clamp((current-s.start)/(s.end-s.start));
-    const next=segments[ci+1];const cross=next?smooth((current-(s.end-.045))/.045):0;
+    const s=segments[ci];const atTail=current>=s.end-.006;
+    const local=atTail?1:clamp((current-s.start)/(s.end-s.start));
     segments.forEach((seg,i)=>{
 
-      let op=i===ci?1:(i===ci+1?cross:0);
-      seg.layer.classList.toggle('opening-hold',i===0&&current<=intro);seg.layer.classList.toggle('ending-hold',i===segments.length-1&&current>=offset);seg.layer.style.opacity=String(op);seg.layer.style.zIndex=String(i);
+      const op=i===ci?1:0;
+      seg.layer.classList.toggle('opening-hold',i===0&&current<=intro);seg.layer.classList.toggle('ending-hold',i===segments.length-1&&current>=offset-.006);seg.layer.style.opacity=String(op);seg.layer.style.zIndex=String(i);
       if(!seg.ready||!seg.video||seg.video.seeking)return;
       let p=i<ci?1:i>ci?0:local;
       if(seg.timeMap){const b=seg.timeMap.findIndex(pt=>pt[0]>=p);if(b>0){const a=seg.timeMap[b-1],z=seg.timeMap[b];p=a[1]+(z[1]-a[1])*(p-a[0])/(z[0]-a[0])}}
       const t=p*Math.max(0,seg.video.duration-1/24);
-      if(Math.abs(seg.video.currentTime-t)>(mobile()?.035:.014)){
+      if(Math.abs(seg.video.currentTime-t)>((p===0||p===1)?.001:mobile()?.035:.014)){
         try{seg.video.currentTime=t}catch{}
       }
     });
     pump();
     if(active!==ci){active=ci;config.onChapter?.(ci)}
     emitStatus(reduced?'静态浏览':s.failed?'视频暂不可用 · 静态画面':s.painted?'':'影像准备中 · 可继续浏览');
-    config.onFrame?.({index:ci,local,progress:current/total,intro:1-smooth((current-intro)/.45),final:smooth((current-(offset-.35))/.4),handoff:reduced?0:smooth((current-(offset+.3))/1.65),reduced});
+    config.onFrame?.({index:ci,local,progress:current/total,intro:1-smooth((current-intro)/.45),final:ci===segments.length-1&&atTail?1:smooth((current-(offset-.35))/.4),handoff:reduced?0:smooth((current-(offset+.3))/1.65),reduced});
     if(motion||playing||current!==target)schedule();
   }
   function stop(){suppressSnapUntil=performance.now()+1800;motion=null;clearTimeout(snapTimer);config.track.dataset.motion='idle';playing=false;config.onPlaying?.(false)}
