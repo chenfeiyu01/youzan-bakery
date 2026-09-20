@@ -56,6 +56,10 @@ npm run test:sites
 
 ### Video delivery
 
-The five 720p/24 fps films total 4.60 MB. They were encoded from the original approved clips with H.264, `-preset slow -crf 26 -g 36 -keyint_min 36 -sc_threshold 0 -movflags +faststart`; shot 2 retains its 4.791667-second edit. HD opening/ending posters are unchanged.
+The homepage selects one rendition at mount: desktop uses the user's upscaled source compressed to 1918×1080 H.264 (10.07 MB total); viewports up to 760 px and browsers reporting Save-Data use the existing 1280×720 films (4.60 MB total). Resizing does not trigger a second download. Both retain 24 fps and chapter frame counts 193 / 115 / 193 / 193 / 193.
 
-`src/video-assets.json` references SHA-256-suffixed film names. Update the filename and manifest whenever a film changes; the Worker allows one-year immutable caching only for these versioned URLs. Entry waits for both fully decoded HD boundary posters and the first decoded film, then downloads remaining films one at a time, prioritizing the visitor's current segment for the next transfer. The arrival animation has a 650 ms minimum, offers a bypass after 2.5 seconds, and begins dismissal after at most 8 seconds.
+Desktop encoding: `trim=start_frame=START:end_frame=END,setpts=N/(24*TB),scale=-2:1080`, `-r 24 -fps_mode cfr -c:v libx264 -preset slow -crf 27 -g 36 -keyint_min 36 -sc_threshold 0 -movflags +faststart`. Encode from the original upscale, not from an already compressed derivative.
+
+`src/video-assets.json` holds content-addressed URLs for both renditions and their corresponding boundary posters. Posters are lossless WebP extracts of the selected encoded films' first and last decoded frames. Only the selected rendition loads; both boundary posters decode before normal entry, while subsequent films download sequentially. The arrival offers a bypass after 2.5 seconds and begins dismissal after at most 8 seconds. Incomplete boundary images remain hidden with video as fallback.
+
+All current refinements remain local on `feat/local-refinements`; publishing requires an explicit user request.

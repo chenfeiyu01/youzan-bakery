@@ -1,7 +1,24 @@
-[
-  "/assets/shot-1-f58aafb8c796.mp4",
-  "/assets/shot-2-7c46e8f6aa96.mp4",
-  "/assets/shot-3-612ffea635de.mp4",
-  "/assets/shot-4-83745f1f5e99.mp4",
-  "/assets/shot-5-8bac6627ca8e.mp4"
-]
+{
+  "desktop": {
+    "clips": [
+      "/assets/shot-1-1baa56044f69.mp4",
+      "/assets/shot-2-96c5508b2fe8.mp4",
+      "/assets/shot-3-647ce4fccc36.mp4",
+      "/assets/shot-4-1e44b3bf0969.mp4",
+      "/assets/shot-5-0a2c55cee540.mp4"
+    ],
+    "opening": "/assets/desktop-opening-c5ffe51d08cc.webp",
+    "ending": "/assets/desktop-ending-45947c987e14.webp"
+  },
+  "mobile": {
+    "clips": [
+      "/assets/shot-1-f58aafb8c796.mp4",
+      "/assets/shot-2-7c46e8f6aa96.mp4",
+      "/assets/shot-3-612ffea635de.mp4",
+      "/assets/shot-4-83745f1f5e99.mp4",
+      "/assets/shot-5-8bac6627ca8e.mp4"
+    ],
+    "opening": "/assets/mobile-opening-e767997edb71.webp",
+    "ending": "/assets/mobile-ending-4bb163528611.webp"
+  }
+}
