@@ -63,3 +63,7 @@ Desktop encoding: `trim=start_frame=START:end_frame=END,setpts=N/(24*TB),scale=-
 `src/video-assets.json` holds content-addressed URLs for both renditions and their corresponding boundary posters. Posters are lossless WebP extracts of the selected encoded films' first and last decoded frames. Only the selected rendition loads; both boundary posters decode before normal entry, while subsequent films download sequentially. The arrival offers a bypass after 2.5 seconds and begins dismissal after at most 8 seconds. Incomplete boundary images remain hidden with video as fallback.
 
 All current refinements remain local on `feat/local-refinements`; publishing requires an explicit user request.
+
+### Local motion experiment
+
+The homepage film now advances to curated chapter boundaries after a deliberate wheel/swipe/PageDown gesture, with a short acceleration and deceleration. Reverse input returns toward the previous boundary. Touchpad momentum is gated so one gesture cannot cascade through several chapters. Use “跳过影像” to reach the editorial content; reduced-motion visitors retain native scrolling and still images. Outside the film, desktop wheel deltas have a short damping tail that yields to anchors, pointer actions and scrollbar changes. Three SVG paths draw and retract with page position. The closing screen is typographic rather than a repeated product gallery. This experiment is local only.

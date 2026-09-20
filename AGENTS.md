@@ -20,3 +20,5 @@ Eagerly preload and decode both HD boundary frames. Never reveal an incompletely
 ## Local refinement branch
 
 Continue on `feat/local-refinements`; keep `main` as the approved baseline. Do not publish or push these refinements until the user explicitly requests it. The collection page uses warm paper, Song/serif typography and direct product interaction rather than repeating the homepage scroll-video choreography. Keep loading light and reuse approved product photography.
+
+Homepage motion update: each deliberate wheel, swipe or navigation-key gesture advances a complete film segment to the next segment's first frame. Reject inertial tail gestures; allow reverse, skip, native scrollbar takeover and reduced-motion fallback. Damping applies to editorial desktop wheel scrolling only; touch outside the cinema stays native. Scroll-drawn curves support whitespace. Footer must not repeat the product grid or use an oversized wordmark; use a restrained typographic sign-off and a drawn curve.

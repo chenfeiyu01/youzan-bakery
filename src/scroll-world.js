@@ -9,6 +9,7 @@ export function mountScrollWorld(container, config) {
   const mobile = () => matchMedia('(max-width: 760px)').matches;
   const abort = new AbortController();
   let destroyed=false, raf=0, target=0, current=0, prevTime=0, playing=false;
+  let motion=null,suppressSnapUntil=0,lastWheel=0,wheelSum=0,settledAt=0,touchY=null,touchUsed=false,snapTimer=0;
   let viewport=innerHeight, width=innerWidth, active=-1, lastStatus='';
   const intro=.28, ending=reduced?.6:2.2;
   let offset=intro;
@@ -22,7 +23,41 @@ export function mountScrollWorld(container, config) {
     return s;
   });
   const total=offset+ending;
+  const stops=[0,...segments.slice(1).map(s=>s.start),offset+.001,total];
   let downloading=false;
+  function animateTo(index){
+    const from=current,to=stops[index];
+    if(Math.abs(to-from)<.002)return;
+    const chapter=segments.find(s=>from<s.end)||segments.at(-1);
+    const seconds=chapter.video?.duration||8;
+    motion={from,to,index,elapsed:0,wait:0,duration:index===stops.length-1?1500:Math.max(1500,Math.min(4600,seconds*550))};
+    config.track.dataset.motion='playing';schedule();
+  }
+  function step(direction){
+    if(motion){
+      if(Math.sign(motion.to-motion.from)===direction)return;
+      motion=null;
+    }
+    const index=direction>0?stops.findIndex(p=>p>current+.025):stops.findLastIndex(p=>p<current-.025);
+    if(index>=0)animateTo(index);
+  }
+  function accepts(direction){return !reduced&&!destroyed&&document.body.style.overflow!=='hidden'&&!document.querySelector('dialog[open]')&&scrollY>=0&&scrollY<=total*viewport+2&&(motion||(direction>0?current<total-.01:current>.01))}
+  function wheel(e){
+    if(e.ctrlKey||Math.abs(e.deltaX)>Math.abs(e.deltaY)||e.target.closest('input,textarea,select,dialog'))return;
+    const delta=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?viewport:1),dir=Math.sign(delta);if(!dir||!accepts(dir))return;
+    e.preventDefault();const now=performance.now(),quiet=now-lastWheel>260;lastWheel=now;
+    if(motion){if(Math.sign(motion.to-motion.from)!==dir&&Math.abs(delta)>18)step(dir);return}
+    if(now-settledAt<350||!quiet&&wheelSum===0)return;
+    if(quiet||Math.sign(wheelSum)!==dir)wheelSum=0;wheelSum+=delta;
+    if(Math.abs(wheelSum)>=28){wheelSum=0;step(dir)}
+  }
+  function keyboard(e){
+    if(e.defaultPrevented||e.altKey||e.metaKey||e.ctrlKey||e.target.closest('button,a,input,textarea,select,dialog'))return;
+    const dir=['ArrowDown','PageDown',' '].includes(e.key)?(e.shiftKey?-1:1):['ArrowUp','PageUp'].includes(e.key)?-1:0;
+    if(dir&&accepts(dir)){e.preventDefault();if(!e.repeat)step(dir)}
+    if(e.key==='Escape'&&motion){const to=motion.to;motion=null;target=current=to;config.track.dataset.motion='idle';window.scrollTo({top:to*viewport,behavior:'instant'});schedule()}
+  }
+
   const boundaries=[segments[0],segments[segments.length-1]];
   // Both HD boundary images must be decoded before normal entry.
   function preloadState(){if(!destroyed)config.onPreload?.({done:boundaries.filter(s=>s.posterSettled).length+(reduced?0:Number(segments[0].painted||segments[0].failed)),total:reduced?2:3,failed:segments[0].failed||boundaries.some(s=>s.posterFailed)})}
@@ -58,12 +93,31 @@ export function mountScrollWorld(container, config) {
     }catch(e){if(!destroyed){s.loading=false;s.failed=true;preloadState();schedule()}}finally{downloading=false;pump()}
   }
   function schedule(){if(!raf&&!destroyed&&!document.hidden)raf=requestAnimationFrame(tick)}
-  function read(){target=clamp(scrollY/viewport,0,total);schedule()}
+  function read(){
+    if(motion){if(Math.abs(scrollY-current*viewport)<3)return;motion=null;config.track.dataset.motion='idle'}
+    target=clamp(scrollY/viewport,0,total);schedule();
+    clearTimeout(snapTimer);
+    if(!reduced&&target>0&&target<offset&&performance.now()>suppressSnapUntil&&document.body.style.overflow!=='hidden')snapTimer=setTimeout(()=>{
+      if(motion||destroyed)return;
+      const nearest=stops.reduce((best,p,i)=>Math.abs(p-target)<Math.abs(stops[best]-target)?i:best,0);
+      if(Math.abs(stops[nearest]-target)>.025)animateTo(nearest);
+    },240);
+  }
   function tick(time){
     raf=0;if(destroyed)return;
     const dt=Math.min(time-(prevTime||time),50);prevTime=time;
+    if(motion){
+      const m=motion,seg=segments.find(s=>current<s.end)||segments.at(-1);
+      if(!seg.painted&&!seg.failed&&m.wait<4000){m.wait+=dt;pump()}else m.elapsed+=dt;
+      const p=clamp(m.elapsed/m.duration);
+      // Gentle acceleration/deceleration, long nearly linear middle for the film.
+      const eased=p<.12?p*p/.2112:p>.88?1-(1-p)*(1-p)/.2112:(p-.06)/.88;
+      current=target=m.from+(m.to-m.from)*clamp(eased);
+      window.scrollTo({top:current*viewport,behavior:'instant'});
+      if(p>=1){current=target=m.to;motion=null;settledAt=time;config.track.dataset.motion='idle';config.track.dataset.stop=String(m.index)}
+    }
     if(playing){target=Math.min(total,target+dt/1000*(total/43));window.scrollTo({top:target*viewport,behavior:'instant'});if(target>=total)stop()}
-    current=reduced?target:current+(target-current)*(1-Math.exp(-dt/75));
+    current=motion?current:reduced?target:current+(target-current)*(1-Math.exp(-dt/75));
     if(Math.abs(current-target)<.0004)current=target;
     let ci=segments.findIndex(s=>current<s.end);if(ci<0)ci=segments.length-1;
     const s=segments[ci];const local=clamp((current-s.start)/(s.end-s.start));
@@ -84,11 +138,11 @@ export function mountScrollWorld(container, config) {
     if(active!==ci){active=ci;config.onChapter?.(ci)}
     emitStatus(reduced?'静态浏览':s.failed?'视频暂不可用 · 静态画面':s.painted?'':'影像准备中 · 可继续浏览');
     config.onFrame?.({index:ci,local,progress:current/total,intro:1-smooth((current-intro)/.45),final:smooth((current-(offset-.35))/.4),handoff:reduced?0:smooth((current-(offset+.3))/1.65),reduced});
-    if(playing||current!==target)schedule();
+    if(motion||playing||current!==target)schedule();
   }
-  function stop(){playing=false;config.onPlaying?.(false)}
+  function stop(){suppressSnapUntil=performance.now()+1800;motion=null;clearTimeout(snapTimer);config.track.dataset.motion='idle';playing=false;config.onPlaying?.(false)}
   function toggle(){if(reduced)return;if(playing)stop();else{if(target>=total-.02){target=0;current=0;window.scrollTo({top:0,behavior:'instant'})}playing=true;config.onPlaying?.(true);schedule()}}
-  function go(i){stop();window.scrollTo({top:i===0?0:(segments[i].start+.65*(segments[i].end-segments[i].start))*viewport,behavior:reduced?'instant':'smooth'})}
+  function go(i){stop();if(reduced){window.scrollTo({top:stops[i]*viewport,behavior:'instant'})}else animateTo(i)}
   function toEnd(){stop();window.scrollTo({top:total*viewport,behavior:reduced?'instant':'smooth'})}
   function onResize(){if(mobile()&&width===innerWidth)return;layout()}
   function prime(){segments.forEach(s=>{if(s.video&&mobile()){const v=s.video;v.play().then(()=>v.pause()).catch(()=>{})}})}
@@ -96,8 +150,17 @@ export function mountScrollWorld(container, config) {
   window.addEventListener('resize',onResize,{signal:abort.signal});
   window.addEventListener('orientationchange',layout,{signal:abort.signal});
   window.addEventListener('pointerdown',prime,{once:true,passive:true,signal:abort.signal});
-  ['wheel','touchstart','keydown'].forEach(e=>window.addEventListener(e,stop,{passive:true,signal:abort.signal}));
-  document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();cancelAnimationFrame(raf);raf=0}else{prevTime=0;schedule()}},{signal:abort.signal});
+  window.addEventListener('wheel',wheel,{passive:false,signal:abort.signal});
+  window.addEventListener('keydown',keyboard,{signal:abort.signal});
+  window.addEventListener('touchstart',e=>{touchY=e.touches.length===1?e.touches[0].clientY:null;touchUsed=false},{passive:true,signal:abort.signal});
+  window.addEventListener('touchmove',e=>{
+    if(touchY===null||e.touches.length!==1||e.target.closest('input,textarea,select,dialog'))return;
+    const delta=touchY-e.touches[0].clientY,dir=Math.sign(delta);
+    if(!accepts(dir))return;
+    e.preventDefault();if(Math.abs(delta)>35&&!touchUsed){touchUsed=true;step(dir)}
+  },{passive:false,signal:abort.signal});
+  window.addEventListener('touchend',()=>{touchY=null},{passive:true,signal:abort.signal});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(raf);raf=0}else{prevTime=0;schedule()}},{signal:abort.signal});
   layout();pump();preloadState();
-  return {go,toEnd,toggle,stop,reduced,destroy(){destroyed=true;abort.abort();cancelAnimationFrame(raf);segments.forEach(s=>{if(s.video){s.video.pause();s.video.removeAttribute('src');s.video.load()}if(s.url)URL.revokeObjectURL(s.url);s.layer.remove()})}};
+  return {go,toEnd,toggle,stop,reduced,destroy(){destroyed=true;clearTimeout(snapTimer);abort.abort();cancelAnimationFrame(raf);segments.forEach(s=>{if(s.video){s.video.pause();s.video.removeAttribute('src');s.video.load()}if(s.url)URL.revokeObjectURL(s.url);s.layer.remove()})}};
 }
