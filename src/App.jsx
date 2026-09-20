@@ -1,5 +1,6 @@
+import {Arrival} from './Arrival';
 import {moveProduct} from './product-transition';
-import {useEffect,useRef,useState} from 'react';
+import {useCallback,useEffect,useRef,useState} from 'react';
 import {ArrowDown,ArrowUpRight,ArrowUp,Plus,X} from '@phosphor-icons/react';
 import {mountScrollWorld,clamp} from './scroll-world';
 const chapters=[1.65,1,1.5,1.45,1.5].map((scroll,i)=>({scroll,clip:`/assets/shot-${i+1}.mp4`,poster:i===0?'/assets/opening-hd.webp':i===4?'/assets/final-hd.webp':`/assets/detail-${i+1}.webp`,...(i===4?{timeMap:[[0,0],[.12,.17],[.26,.43],[1,1]]}:{})}));
@@ -10,10 +11,13 @@ function Ribbon({className,count=22}){return <svg className={className} viewBox=
 export function App(){
  const root=useRef(),stage=useRef(),track=useRef(),engine=useRef(),dialog=useRef(),lastFocus=useRef(),closing=useRef(false);
  const [panel,setPanel]=useState(null),[status,setStatus]=useState('');
+ const [arriving,setArriving]=useState(true),[resources,setResources]=useState({done:0,total:6,failed:false});
+ const enter=useCallback(()=>setArriving(false),[]);
+ useEffect(()=>{document.body.style.overflow=arriving||panel?'hidden':'';return()=>{document.body.style.overflow=''}},[arriving,panel]);
  const jump=id=>{engine.current.stop();document.getElementById(id)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'})};
  useEffect(()=>{
   const r=root.current,copies=[...r.querySelectorAll('[data-film-copy]')];
-  engine.current=mountScrollWorld(stage.current,{sections:chapters,track:track.current,onStatus:setStatus,onFrame:({index,local,intro,final,progress,reduced,handoff})=>{
+  engine.current=mountScrollWorld(stage.current,{sections:chapters,track:track.current,onStatus:setStatus,onPreload:setResources,onFrame:({index,local,intro,final,progress,reduced,handoff})=>{
    r.style.setProperty('--handoff',handoff);const debut=r.querySelector('.product-debut');debut.inert=handoff<.75;r.style.setProperty('--intro',intro);r.style.setProperty('--final',final);r.style.setProperty('--travel',progress);
    copies.forEach(el=>{const n=Number(el.dataset.filmCopy);let a=n===0?intro:n===4?final*(1-handoff):n===index?Math.min(clamp((local-.18)/.18),clamp((.93-local)/.16)):0;
     el.style.opacity=a;el.style.visibility=a>.005?'visible':'hidden';el.inert=a<.4;
@@ -31,13 +35,13 @@ export function App(){
   const scroll=()=>{if(!raf)raf=requestAnimationFrame(draw)};window.addEventListener('scroll',scroll,{passive:true});window.addEventListener('resize',scroll);draw();
   return()=>{engine.current.destroy();observer.disconnect();cancelAnimationFrame(raf);window.removeEventListener('scroll',scroll);window.removeEventListener('resize',scroll)};
  },[]);
- useEffect(()=>{if(panel){dialog.current.showModal();document.body.style.overflow='hidden';requestAnimationFrame(()=>moveProduct(lastFocus.current?.querySelector('img'),dialog.current.querySelector('.product-photo img')))}else{dialog.current.close();document.body.style.overflow='';lastFocus.current?.focus({preventScroll:true})}return()=>{document.body.style.overflow=''}},[panel]);
+ useEffect(()=>{if(panel){dialog.current.showModal();requestAnimationFrame(()=>moveProduct(lastFocus.current?.querySelector('img'),dialog.current.querySelector('.product-photo img')))}else{dialog.current.close();lastFocus.current?.focus({preventScroll:true})}},[panel]);
  const close=async()=>{if(closing.current)return;closing.current=true;await moveProduct(dialog.current.querySelector('.product-photo img'),lastFocus.current?.querySelector('img'));setPanel(null);closing.current=false};
  const open=(e,name='classic')=>{lastFocus.current=e.currentTarget;engine.current.stop();setPanel(name)};
  const followPointer=e=>{if(!matchMedia('(hover:hover)').matches||matchMedia('(prefers-reduced-motion: reduce)').matches)return;const r=e.currentTarget.getBoundingClientRect();e.currentTarget.style.setProperty('--pointer-x',`${((e.clientX-r.left)/r.width-.5)*12}px`);e.currentTarget.style.setProperty('--pointer-y',`${((e.clientY-r.top)/r.height-.5)*8}px`)};
  const resetPointer=e=>{e.currentTarget.style.setProperty('--pointer-x','0px');e.currentTarget.style.setProperty('--pointer-y','0px')};
  const product=panel==='chocolate'?{name:'巧克力酥',en:'PAIN AU CHOCOLAT',image:'chocolate',copy:'深烘的可可，轻盈的酥层。香气在一口之间，慢慢展开。'}:{name:'原味可颂',en:'CLASSIC BUTTER CROISSANT',image:'final-hd',copy:'酥皮先于香气抵达。随后，是黄油、空气，与恰好的烘烤。'};
- return <main ref={root} className="experience">
+ return <>{arriving&&<Arrival resources={resources} onEnter={enter}/>}<main ref={root} className="experience" inert={arriving}>
   <a className="skip-link" href="#approach">跳过影像，阅读品牌理念</a>
   <header className="site-header"><button className="wordmark" onClick={()=>engine.current.go(0)} aria-label="有赞烘焙，回到开场">有赞烘焙<span>YOUZAN BAKERY</span></button><nav aria-label="主导航"><button onClick={()=>jump('approach')}>关于有赞</button><button onClick={()=>jump('collection')}>烘焙作品 <ArrowUpRight size={14}/></button></nav></header>
   <div className="cinema" ref={track}><div className="film-pin">
@@ -65,5 +69,5 @@ export function App(){
   <section className="atelier" id="atelier"><div className="atelier-photo"><img src="/assets/atelier.webp" width="1672" height="941" alt="自然光下的开放式烘焙工作室" loading="lazy"/></div><div className="atelier-copy" data-reveal><p className="micro">A SPACE FOR THE EXTRAORDINARY.</p><h2><Lines lines={['让认真，','成为日常。']}/></h2><p>在光线与面粉之间，<br/>为下一次出炉，留足时间。</p></div><span className="atelier-caption">有赞烘焙 / 概念工作室</span></section>
   <footer className="brand-footer"><Ribbon className="layer-sculpture ribbon-sculpture"/><div className="footer-invitation" data-reveal><p className="micro">WELCOME TO YOUZAN.</p><h2><Lines lines={['下一次心动，','从这一口开始。']}/></h2><button className="text-link" onClick={()=>engine.current.go(0)}>再看一遍 <ArrowUp size={20}/></button></div><div className="footer-brand" aria-hidden="true"><span className="footer-letters">{[..."YOUZAN"].map((letter,i)=><span key={i} style={{"--char":i}}>{letter}</span>)}</span><span className="rotating-star"><Plus size={130} weight="thin"/></span></div><div className="footer-small"><span>有赞烘焙</span><span>THE ART OF EVERYDAY BAKING.</span><span>品牌概念体验</span></div></footer>
   <dialog ref={dialog} className="brand-dialog" onCancel={e=>{e.preventDefault();close()}} onClick={e=>{if(e.target===dialog.current)close()}} aria-labelledby="dialog-title"><button className="close-dialog" aria-label="关闭" onClick={close}><X size={24}/></button><div className="product-photo"><img src={`/assets/${product.image}.webp`} alt={product.name}/></div><div className="panel-copy"><p className="micro">THE ORIGINAL.</p><h2 id="dialog-title">{product.name}</h2><p>{product.copy}</p><p className="product-caption">{product.en}</p><button className="text-link" onClick={()=>{setPanel(null);engine.current.go(1)}}>探索酥层的奥秘 <ArrowUpRight size={20}/></button></div></dialog>
- </main>
+ </main></>
 }

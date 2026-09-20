@@ -11,3 +11,5 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 ## Durable design preferences
 
 Keep monumental YOUZAN lettering and visible difference blending over the croissant. Keep supporting text separate. Use the approved HD boundary frames without a dissolve. Prefer continuous, reversible scroll choreography and product-image continuity over repeated slide-like entrances. Preserve the flowing ribbon motif, with no center dot or accidentally clipped contours.
+
+Use a full-screen branded arrival sequence while preloading the film. Keep runtime media status separate from editorial text. Offer a slow-network bypass and bounded wait; respect reduced motion without downloading video.
