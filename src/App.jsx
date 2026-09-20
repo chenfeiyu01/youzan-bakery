@@ -12,7 +12,7 @@ function Ribbon({className,count=22}){return <svg className={className} viewBox=
 export function App(){
  const root=useRef(),stage=useRef(),track=useRef(),engine=useRef(),dialog=useRef(),lastFocus=useRef(),closing=useRef(false);
  const [panel,setPanel]=useState(null),[status,setStatus]=useState('');
- const [arriving,setArriving]=useState(true),[resources,setResources]=useState({done:0,total:2,failed:false});
+ const [arriving,setArriving]=useState(true),[resources,setResources]=useState({done:0,total:3,failed:false});
  const enter=useCallback(()=>setArriving(false),[]);
  useEffect(()=>{document.body.style.overflow=arriving||panel?'hidden':'';return()=>{document.body.style.overflow=''}},[arriving,panel]);
  const jump=id=>{engine.current.stop();document.getElementById(id)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'})};

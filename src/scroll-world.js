@@ -15,15 +15,17 @@ export function mountScrollWorld(container, config) {
   const segments=config.sections.map((section,i)=>{
     const s={...section, start:offset, end:offset+section.scroll, loading:false, ready:false, painted:false, url:null, failed:false};offset=s.end;
     const layer=document.createElement('div');layer.className='film-layer';layer.style.opacity=i===0?'1':'0';
-    const image=document.createElement('img');image.src=section.poster;image.alt='';image.decoding='async';
-    if(i)image.loading='lazy';else image.fetchPriority='high';
+    const image=document.createElement('img');image.alt='';image.decoding='async';
+    if(i===0||i===config.sections.length-1){image.loading='eager';image.fetchPriority='high';layer.classList.add('boundary-poster')}else image.loading='lazy';
+    image.src=section.poster;
     layer.append(image);container.append(layer);s.layer=layer;s.image=image;
     return s;
   });
   const total=offset+ending;
-  let posterSettled=false, downloading=false;
-  // Only the opening poster and first decoded film gate entry.
-  function preloadState(){if(!destroyed)config.onPreload?.({done:(posterSettled?1:0)+(reduced?0:Number(segments[0].painted||segments[0].failed)),total:reduced?1:2,failed:segments[0].failed})}
+  let downloading=false;
+  const boundaries=[segments[0],segments[segments.length-1]];
+  // Both HD boundary images must be decoded before normal entry.
+  function preloadState(){if(!destroyed)config.onPreload?.({done:boundaries.filter(s=>s.posterSettled).length+(reduced?0:Number(segments[0].painted||segments[0].failed)),total:reduced?2:3,failed:segments[0].failed||boundaries.some(s=>s.posterFailed)})}
   function pump(){
     if(destroyed||reduced||downloading)return;
     const first=segments[0];
@@ -34,7 +36,9 @@ export function mountScrollWorld(container, config) {
     const next=order.find(s=>!s.loading&&!s.ready&&!s.failed);
     if(next)load(next);
   }
-  segments[0].image.decode().catch(()=>{}).then(()=>{posterSettled=true;preloadState()});
+  boundaries.forEach(s=>{
+    s.image.decode().then(()=>{if(!destroyed)s.layer.classList.add('poster-ready')}).catch(()=>{s.posterFailed=true}).finally(()=>{if(!destroyed){s.posterSettled=true;preloadState();schedule()}});
+  });
 
   function layout(){ viewport=innerHeight;width=innerWidth;config.track.style.height=`${(total+1)*viewport}px`;read(); }
   function emitStatus(value){if(lastStatus!==value){lastStatus=value;config.onStatus?.(value)}}

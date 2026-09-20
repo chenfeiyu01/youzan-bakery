@@ -13,4 +13,6 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 Keep monumental YOUZAN lettering and visible difference blending over the croissant. Keep supporting text separate. Use the approved HD boundary frames without a dissolve. Prefer continuous, reversible scroll choreography and product-image continuity over repeated slide-like entrances. Preserve the flowing ribbon motif, with no center dot or accidentally clipped contours.
 
 Use a full-screen branded arrival sequence while preloading the film. Keep runtime media status separate from editorial text. Offer a slow-network bypass and bounded wait; respect reduced motion without downloading video.
-Prioritize public loading speed: gate entry on the opening poster and first film only, keep other film transfers sequential, and retain content-addressed URLs for safely cacheable media. Avoid increasing video size solely to add dense keyframes.
+Prioritize public loading speed: gate entry on both fully decoded HD boundary posters and the first film only, keep other film transfers sequential, and retain content-addressed URLs for safely cacheable media. Avoid increasing video size solely to add dense keyframes.
+
+Eagerly preload and decode both HD boundary frames. Never reveal an incompletely decoded poster; keep the video visible as fallback.

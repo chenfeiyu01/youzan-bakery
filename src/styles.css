@@ -48,7 +48,7 @@
 @media(max-width:760px){.hero-type{top:42%}}
 
 /* V6: monumental type, scroll-choreographed glyphs and lamination sculpture. */
-.film-layer.opening-hold.has-video img{opacity:1;z-index:2}.film-layer.opening-hold.has-video video{opacity:0}
+.film-layer.opening-hold.poster-ready.has-video img{opacity:1;z-index:2}.film-layer.opening-hold.poster-ready.has-video video{opacity:0}
 .hero-type{left:4%;width:90%;top:20%;font-size:20vw;line-height:.78;letter-spacing:-.09em}
 .hero-copy{top:auto;bottom:12%;width:38vw}.hero-copy .micro{font-size:9px;letter-spacing:.12em}.hero-copy h1{font-size:clamp(32px,3.5vw,64px);line-height:1.18}
 .statement{transform:none;inset: auto 5vw 15%;text-shadow:0 2px 20px #0008}
@@ -70,7 +70,7 @@
 .layer-sculpture ellipse{transform-origin:0 0;stroke-dasharray:none;stroke-dashoffset:0;vector-effect:non-scaling-stroke}
 @media(max-width:760px){.layer-sculpture{width:48vw;height:48vw;right:1vw;top:10px;opacity:.36}}
 
-.film-layer.ending-hold.has-video img{opacity:1;z-index:2}.film-layer.ending-hold.has-video video{opacity:0}
+.film-layer.ending-hold.poster-ready.has-video img{opacity:1;z-index:2}.film-layer.ending-hold.poster-ready.has-video video{opacity:0}
 .ribbon-sculpture{width:37vw;height:37vw;right:1vw;top:40px;stroke-width:1;opacity:.85;transform:rotate(calc(-12deg + var(--end,0)*24deg));overflow:visible}
 .ribbon-sculpture path{vector-effect:non-scaling-stroke;stroke-linecap:round}
 @media(max-width:760px){.ribbon-sculpture{width:49vw;height:49vw;right:0;top:10px;opacity:.4}}
@@ -114,3 +114,6 @@
 @keyframes arrival-thread{to{stroke-dashoffset:0}}@keyframes arrival-title{from{opacity:0;transform:translateY(35px);letter-spacing:-.04em}to{opacity:1;transform:none;letter-spacing:-.085em}}@keyframes arrival-breathe{from{transform:rotate(-8deg) scale(.94)}to{transform:rotate(5deg) scale(1.04)}}
 @media(max-width:760px){.arrival{padding:28px 7vw}.arrival-top>span:last-child{display:none}.arrival-art{inset:18% -8% 23%}.arrival-title{font-size:22vw;margin-top:17vh}.arrival-bottom{align-items:flex-start;gap:24px}.arrival-bottom p{font-size:12px;line-height:1.8}.arrival-bottom p>span{font-size:7px;max-width:150px}.arrival-state{min-width:112px;font-size:9px}.load-status{top:85px;bottom:auto}}
 @media(prefers-reduced-motion:reduce){.arrival{transition:none}.arrival-art,.arrival-title,.arrival-art path{animation:none}.arrival-art path{stroke-dashoffset:0}}
+
+/* Never reveal an HD boundary image while it is still decoding. */
+.film-layer.boundary-poster:not(.poster-ready) img{visibility:hidden}
